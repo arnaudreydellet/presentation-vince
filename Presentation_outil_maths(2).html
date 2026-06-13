@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Outil de diagnostic et de remédiation en maths</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF;
+  --panel:#F5F3EE;
+  --panel-2:#FAF8F3;
+  --ink:#15233C;
+  --muted:#5C6678;
+  --gold:#BE922B;
+  --gold-soft:#E7D4A0;
+  --line:rgba(21,35,60,.12);
+  --shadow:0 18px 44px -26px rgba(21,35,60,.35);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:'Inter Tight',system-ui,sans-serif;
+  background:var(--bg);color:var(--ink);overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.deck{position:fixed;inset:0}
+
+.slide{
+  position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+  padding:clamp(28px,5vw,86px);background:var(--bg);
+  opacity:0;visibility:hidden;transform:translateY(12px);
+  transition:opacity .45s ease,transform .45s ease,visibility .45s;overflow-y:auto;
+}
+.slide.active{opacity:1;visibility:visible;transform:none;z-index:2}
+.slide-inner{width:100%;max-width:1080px;margin:0 auto}
+
+.eyebrow{font-size:.9rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);
+  display:flex;align-items:center;gap:.7rem;margin-bottom:1.1rem}
+.eyebrow::before{content:"";width:30px;height:3px;border-radius:2px;background:var(--gold);opacity:1}
+h2{font-family:'Fraunces',serif;font-weight:600;line-height:1.06;letter-spacing:-.015em;
+  font-size:clamp(1.8rem,3.8vw,2.8rem);margin-bottom:.5rem}
+.lead{color:var(--muted);font-size:clamp(1rem,1.5vw,1.18rem);max-width:52ch;line-height:1.5}
+.num{font-family:'Fraunces',serif;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.note{margin-top:1.3rem;font-size:.85rem;color:var(--muted)}
+
+/* chrome */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(20px,4vw,48px);height:54px;pointer-events:none}
+.slide-meta{font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.dots{display:flex;gap:6px;align-items:center}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--line);transition:.3s;cursor:pointer;pointer-events:auto}
+.dot.on{background:var(--gold);width:22px;border-radius:4px}
+.nav{position:fixed;bottom:14px;right:clamp(20px,4vw,48px);z-index:31;display:flex;gap:8px}
+.nav button{width:38px;height:38px;border:1px solid var(--line);background:#fff;border-radius:50%;cursor:pointer;
+  color:var(--ink);display:grid;place-items:center;font-size:1.1rem;transition:.2s}
+.nav button:hover{border-color:var(--gold);color:var(--gold)}
+.nav button:disabled{opacity:.3;cursor:default}
+.progress{position:fixed;top:0;left:0;height:3px;background:var(--gold);z-index:40;transition:width .45s ease;width:0}
+
+/* grids + cards */
+.grid{display:grid;gap:clamp(13px,1.5vw,18px)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:clamp(16px,1.9vw,24px)}
+.card h3{font-family:'Fraunces',serif;font-weight:600;font-size:1.06rem;margin-bottom:.4rem}
+.card p{font-size:.95rem;line-height:1.45;color:var(--muted)}
+.card .k{font-size:.68rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:.55rem}
+
+/* hero */
+.hero{justify-content:center;text-align:center}
+.hero h1{font-family:'Fraunces',serif;font-weight:600;line-height:1.05;letter-spacing:-.02em;
+  font-size:clamp(2.2rem,6vw,4.2rem);max-width:16ch;margin:0 auto}
+.hero .sub{margin-top:1.4rem;font-size:clamp(1.05rem,2vw,1.4rem);color:var(--muted)}
+.hero .rule{width:54px;height:3px;background:var(--gold);margin:2.2rem auto 0;border-radius:3px}
+
+/* icons */
+.ico{width:34px;height:34px;stroke:var(--gold);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+/* big market */
+.market{display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(18px,2.4vw,34px);align-items:center;margin-top:1.4rem}
+.hero-num{background:var(--ink);color:#fff;border-radius:18px;padding:clamp(24px,3vw,40px);box-shadow:var(--shadow)}
+.hero-num .big{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(3rem,8vw,5.4rem);line-height:.95;letter-spacing:-.02em}
+.hero-num .big .u{color:var(--gold-soft);font-size:.45em;margin-left:.15em}
+.hero-num .cap{margin-top:.7rem;font-size:1rem;color:rgba(255,255,255,.78)}
+.mstack{display:grid;gap:clamp(12px,1.6vw,16px)}
+.mrow{display:flex;align-items:center;gap:1rem;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:clamp(13px,1.6vw,18px)}
+.mrow .n{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(1.5rem,3vw,2.1rem);line-height:1;white-space:nowrap}
+.mrow .l{font-size:.92rem;color:var(--muted);line-height:1.35}
+
+/* steps / flow */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:.6rem}
+.step{position:relative;padding:0 clamp(8px,1.3vw,16px)}
+.step:not(:last-child)::after{content:"→";position:absolute;right:-7px;top:14px;color:var(--gold);font-size:1.25rem;opacity:.7}
+.step .badge{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-family:'Fraunces',serif;
+  font-weight:600;background:var(--ink);color:var(--gold-soft);margin-bottom:.9rem}
+.step h3{font-family:'Fraunces',serif;font-weight:600;font-size:1.05rem;margin-bottom:.35rem}
+.step p{font-size:.88rem;color:var(--muted);line-height:1.4}
+.oneliner{margin-top:clamp(24px,3vw,40px);background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:clamp(18px,2.2vw,26px);font-family:'Fraunces',serif;font-size:clamp(1.05rem,1.8vw,1.3rem);line-height:1.4}
+.oneliner b{color:var(--gold)}
+
+/* extension */
+.ext{display:grid;grid-template-columns:1fr auto 1.2fr;gap:clamp(14px,2.4vw,30px);align-items:stretch;margin-top:1.4rem}
+.ext .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:clamp(18px,2.2vw,28px);display:flex;flex-direction:column;justify-content:center}
+.ext .box.now{border-color:var(--gold);background:var(--panel-2)}
+.ext .tag{font-size:.68rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:.7rem}
+.ext .box h3{font-family:'Fraunces',serif;font-weight:600;font-size:1.35rem;margin-bottom:.3rem}
+.ext .box p{font-size:.92rem;color:var(--muted);line-height:1.4}
+.ext .bignum{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(2rem,4vw,3rem);line-height:1;margin:.2rem 0 .6rem}
+.ext .arrow{display:grid;place-items:center;font-size:1.8rem;color:var(--gold)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:.9rem}
+.chip{font-size:.82rem;border:1px solid var(--line);color:var(--ink);padding:.35rem .7rem;border-radius:100px;background:#fff}
+
+/* model */
+.model{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(13px,1.6vw,18px);margin-top:1.2rem}
+.qcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,2vw,26px);text-align:center}
+.qcard .q{font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:.7rem}
+.qcard .a{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(1.3rem,2.4vw,1.8rem);line-height:1.1}
+.qcard .a small{display:block;font-family:'Inter Tight';font-weight:400;font-size:.85rem;color:var(--muted);margin-top:.45rem}
+.proc-strip{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin-top:1.3rem;background:var(--ink);color:#fff;
+  border-radius:14px;padding:clamp(14px,1.8vw,20px) clamp(16px,2vw,24px)}
+.proc-strip .ps{font-size:.92rem;color:rgba(255,255,255,.9)}
+.proc-strip .sep{color:var(--gold-soft)}
+
+/* project flow (boxes) */
+.pflow{display:flex;align-items:stretch;gap:0;margin-top:2rem;flex-wrap:nowrap}
+.pbox{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:clamp(15px,1.9vw,22px);
+  display:flex;flex-direction:column;justify-content:center;min-height:128px}
+.pbox .s{font-family:'Fraunces',serif;font-weight:600;color:var(--gold);font-size:.85rem;margin-bottom:.5rem}
+.pbox p{font-family:'Fraunces',serif;font-weight:500;font-size:clamp(.98rem,1.4vw,1.12rem);line-height:1.25;color:var(--ink)}
+.parr{display:flex;align-items:center;color:var(--gold);font-size:1.4rem;padding:0 clamp(6px,.9vw,12px)}
+
+/* compare (what exists vs us) */
+.compare{display:flex;flex-direction:column;gap:clamp(14px,1.8vw,20px);margin-top:1.6rem}
+.crow{display:flex;align-items:center;gap:clamp(12px,1.6vw,20px);flex-wrap:wrap}
+.clabel{flex:none;width:130px;font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.clabel.gold{color:var(--gold)}
+.cflow{flex:1;display:flex;align-items:stretch;gap:0;min-width:280px}
+.cbox{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:clamp(12px,1.5vw,17px);
+  font-size:.92rem;line-height:1.3;display:flex;align-items:center}
+.cbox.dead{border-style:dashed;color:var(--muted);background:transparent}
+.cbox.dead::before{content:"✕";color:#C0392B;font-weight:700;margin-right:.5rem}
+.cbox.live{border-color:var(--gold);background:var(--panel-2)}
+.carr{display:flex;align-items:center;color:var(--gold);font-size:1.2rem;padding:0 clamp(5px,.8vw,10px)}
+@media(max-width:760px){
+  .pflow{flex-direction:column}.parr{transform:rotate(90deg);justify-content:center;padding:.25rem 0}
+  .cflow{flex-direction:column}.carr{transform:rotate(90deg);justify-content:center;padding:.2rem 0}
+  .clabel{width:auto}
+}
+
+/* calc */
+.calc{display:flex;align-items:center;justify-content:center;gap:clamp(14px,3vw,40px);flex-wrap:wrap;margin:1.6rem 0}
+.calc .cell{text-align:center}
+.calc .cell .n{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(1.8rem,4vw,2.8rem);line-height:1}
+.calc .cell .l{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:.5rem}
+.calc .op{font-family:'Fraunces',serif;font-size:clamp(1.6rem,3vw,2.4rem);color:var(--gold)}
+.calc .result .n{color:var(--gold)}
+
+/* table */
+.tbl{width:100%;border-collapse:collapse;margin-top:.6rem}
+.tbl th,.tbl td{text-align:left;padding:clamp(13px,1.6vw,19px) clamp(10px,1.4vw,16px);border-bottom:1px solid var(--line)}
+.tbl th{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:600}
+.tbl td{font-size:1rem;color:var(--muted)}
+.tbl td.share{font-family:'Fraunces',serif;font-weight:600;color:var(--ink);font-size:1.15rem}
+.tbl td.arr{font-family:'Fraunces',serif;font-weight:600;color:var(--ink);font-size:1.3rem;text-align:right;white-space:nowrap}
+.tbl tr.hot td{background:var(--panel)}
+.tbl tr.hot td.arr{color:var(--gold)}
+
+/* checks */
+.checks{display:flex;flex-direction:column;gap:.7rem;margin-top:.6rem}
+.check{display:flex;align-items:flex-start;gap:.85rem;font-size:1rem;line-height:1.45}
+.check .mk{flex:none;width:24px;height:24px;border-radius:7px;display:grid;place-items:center;background:var(--gold);color:#fff;font-size:.85rem;font-weight:700;margin-top:1px}
+.check b{font-weight:600}.check span{color:var(--muted)}
+
+/* close */
+.close-sum{display:flex;flex-wrap:wrap;gap:clamp(18px,4vw,52px);margin:1.6rem 0 2rem}
+.close-sum div .n{font-family:'Fraunces',serif;font-weight:600;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:.3rem}
+.close-sum div .t{font-family:'Fraunces',serif;font-size:1.15rem}
+.kicker{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(1.4rem,3vw,2.2rem);line-height:1.2;max-width:26ch;letter-spacing:-.01em}
+.kicker .hl{color:var(--gold)}
+
+@media (max-width:760px){
+  .g4,.g3,.g2,.flow,.model,.market{grid-template-columns:1fr}
+  .ext{grid-template-columns:1fr}
+  .ext .arrow{transform:rotate(90deg)}
+  .step{padding:.6rem 0;border-bottom:1px dashed var(--line)}
+  .step:not(:last-child)::after{content:"";}
+  .slide{justify-content:flex-start;padding-top:64px;padding-bottom:80px}
+  .hero{justify-content:center}
+}
+@media (prefers-reduced-motion:reduce){.slide{transition:opacity .2s}}
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+<div class="bar">
+  <span class="slide-meta" id="meta"></span>
+  <div class="dots" id="dots"></div>
+</div>
+<div class="nav">
+  <button id="prev" aria-label="Précédent">‹</button>
+  <button id="next" aria-label="Suivant">›</button>
+</div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 -->
+  <section class="slide hero active">
+    <div class="slide-inner">
+      <h1>Présentation de l'outil de diagnostic et de remédiation en maths</h1>
+      <p class="sub">Collèges et lycées</p>
+      <div class="rule"></div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Le projet</div>
+      <h2>Voilà comment ça se passe.</h2>
+      <div class="pflow">
+        <div class="pbox"><div class="s">1</div><p>L'élève passe une évaluation diagnostique.</p></div>
+        <div class="parr">→</div>
+        <div class="pbox"><div class="s">2</div><p>L'outil détecte ses lacunes.</p></div>
+        <div class="parr">→</div>
+        <div class="pbox"><div class="s">3</div><p>Il reçoit des fiches de remédiation ciblées.</p></div>
+        <div class="parr">→</div>
+        <div class="pbox"><div class="s">4</div><p>Le prof et le chef d'établissement suivent les progrès.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Le marché — France</div>
+      <h2>Le marché en France.</h2>
+      <div class="market">
+        <div class="hero-num">
+          <div class="big">5,6<span class="u">millions</span></div>
+          <div class="cap">d'élèves au collège et au lycée.</div>
+        </div>
+        <div class="mstack">
+          <div class="mrow"><span class="n">10 680</span><span class="l">collèges et lycées<br>(≈ 6 980 collèges · 3 700 lycées)</span></div>
+          <div class="mrow"><span class="n">~11 000</span><span class="l">chefs d'établissement — ce sont eux qui décident</span></div>
+          <div class="mrow"><span class="n">30</span><span class="l">académies sur tout le territoire</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Après la France</div>
+      <h2>Et le même outil peut servir ailleurs.</h2>
+      <div class="ext">
+        <div class="box now">
+          <div class="tag">On commence ici</div>
+          <h3>La France</h3>
+          <p>Le marché d'entrée. C'est là qu'on lance et qu'on fait nos preuves.</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="box">
+          <div class="tag">Ensuite, potentiellement</div>
+          <div class="bignum">343 millions</div>
+          <p>de personnes qui apprennent les maths en français dans le monde (≈ 93 pays liés à la Francophonie).</p>
+          <div class="chips">
+            <span class="chip">Belgique</span><span class="chip">Suisse romande</span><span class="chip">Luxembourg</span>
+            <span class="chip">Québec</span><span class="chip">Afrique francophone</span>
+          </div>
+        </div>
+      </div>
+      <p class="note">À garder en tête comme une extension possible à moyen / long terme — pas comme le marché de demain.</p>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Le modèle économique</div>
+      <h2>Ce qu'on vend, à qui, et comment.</h2>
+      <div class="model">
+        <div class="qcard"><div class="q">À qui ?</div><div class="a">L'établissement<small>Le collège ou le lycée, pas l'élève ni la famille.</small></div></div>
+        <div class="qcard"><div class="q">Combien ?</div><div class="a">5 € / élève / an<small>Abonnement annuel qui se renouvelle.</small></div></div>
+        <div class="qcard"><div class="q">Qui décide ?</div><div class="a">Le chef d'établissement<small>Un seul interlocuteur à convaincre.</small></div></div>
+      </div>
+      <div class="proc-strip">
+        <span class="ps">Démo</span><span class="sep">→</span>
+        <span class="ps">test pilote</span><span class="sep">→</span>
+        <span class="ps">inscription au budget</span><span class="sep">→</span>
+        <span class="ps">vote du conseil d'administration</span><span class="sep">→</span>
+        <span class="ps">paiement avant la rentrée</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Combien rapporte un établissement</div>
+      <h2>Environ 2 500 à 3 000 € par établissement et par an.</h2>
+      <div class="calc">
+        <div class="cell"><div class="n">528</div><div class="l">élèves en moyenne</div></div>
+        <div class="op">×</div>
+        <div class="cell"><div class="n">5 €</div><div class="l">par élève / an</div></div>
+        <div class="op">=</div>
+        <div class="cell result"><div class="n">≈ 2 640 €</div><div class="l">par établissement / an</div></div>
+      </div>
+      <p class="note" style="text-align:center">5,6 M d'élèves ÷ 10 680 établissements ≈ 528 élèves par établissement.</p>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Le potentiel</div>
+      <h2>Et si on prend une part du marché français.</h2>
+      <table class="tbl">
+        <thead><tr><th>Part des établissements</th><th>Nombre</th><th style="text-align:right">Revenu par an</th></tr></thead>
+        <tbody>
+          <tr><td class="share">1 %</td><td>≈ 107</td><td class="arr">≈ 280 k€</td></tr>
+          <tr class="hot"><td class="share">10 %</td><td>≈ 1 068</td><td class="arr">≈ 2,8 M€</td></tr>
+          <tr><td class="share">100 %</td><td>≈ 10 680</td><td class="arr">≈ 28 M€</td></tr>
+        </tbody>
+      </table>
+      <p class="note">Des ordres de grandeur. C'est un revenu qui revient chaque année tant que l'établissement reste abonné.</p>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Ce qui existe déjà</div>
+      <h2>On évalue les élèves, mais on ne remédie pas.</h2>
+      <p class="lead">L'État fait déjà passer des évaluations nationales. Elles montrent le niveau, souvent catastrophique. Mais une fois le constat posé, rien n'est prévu pour vraiment y remédier.</p>
+      <div class="compare">
+        <div class="crow">
+          <div class="clabel">Aujourd'hui</div>
+          <div class="cflow">
+            <div class="cbox">Évaluations nationales</div><span class="carr">→</span>
+            <div class="cbox">Résultats souvent très faibles</div><span class="carr">→</span>
+            <div class="cbox dead">Rien pour y remédier</div>
+          </div>
+        </div>
+        <div class="crow">
+          <div class="clabel gold">Avec l'outil</div>
+          <div class="cflow">
+            <div class="cbox">On repart des lacunes</div><span class="carr">→</span>
+            <div class="cbox">Fiches de remédiation</div><span class="carr">→</span>
+            <div class="cbox live">Suivi des progrès</div>
+          </div>
+        </div>
+      </div>
+      <p class="note">Le constat, l'État le fait déjà. Ce qui manque, c'est l'outil qui agit derrière.</p>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Où on en est</div>
+      <h2>On a déjà commencé sur le terrain.</h2>
+      <div class="grid g2" style="margin-top:1.8rem;align-items:center">
+        <div class="grid g2">
+          <div class="card" style="text-align:center"><div class="num" style="font-size:clamp(2.4rem,5vw,3.4rem)">3</div><p style="margin-top:.4rem">établissements déjà rencontrés</p></div>
+          <div class="card" style="text-align:center;border-color:var(--gold)"><div class="num" style="font-size:clamp(2.4rem,5vw,3.4rem)">3<span style="color:var(--gold);font-size:.6em">/3</span></div><p style="margin-top:.4rem">intéressés</p></div>
+        </div>
+        <div class="checks">
+          <div class="check"><span class="mk">✓</span><span>Des <b>tests pilotes prévus</b> l'an prochain.</span></div>
+          <div class="check"><span class="mk">✓</span><span>Les <b>retours du terrain</b> ont déjà servi à améliorer l'outil.</span></div>
+          <div class="check"><span class="mk">→</span><span>Objectif : transformer ces pilotes en <b>abonnements payants</b>.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Ce dont j'ai besoin maintenant</div>
+      <h2>Pour aller plus loin, voilà ce qu'il me faut.</h2>
+      <div class="checks" style="margin-top:1.8rem">
+        <div class="check"><span class="mk">1</span><span><b>Solidifier l'outil</b> pour le déployer dans beaucoup d'établissements.</span></div>
+        <div class="check"><span class="mk">2</span><span><b>Rendre l'interface vraiment pro.</b></span></div>
+        <div class="check"><span class="mk">3</span><span><b>Sécuriser</b> l'hébergement, les comptes et la conformité RGPD.</span></div>
+        <div class="check"><span class="mk">4</span><span>Construire une <b>vraie stratégie de vente</b> (établissements, académies, réseaux).</span></div>
+        <div class="check"><span class="mk">5</span><span>Un <b>coup de main</b> : stratégie, argent ou réseau.</span></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+const titles=['','Le projet','Le marché','Après la France','Le modèle','Revenu par établissement','Le potentiel','Ce qui existe','Où on en est','Mes besoins'];
+let i=0;
+const prev=document.getElementById('prev'),next=document.getElementById('next');
+const meta=document.getElementById('meta'),progress=document.getElementById('progress'),dotsWrap=document.getElementById('dots');
+slides.forEach((s,idx)=>{const d=document.createElement('span');d.className='dot'+(idx===0?' on':'');d.onclick=()=>go(idx);dotsWrap.appendChild(d);});
+const dots=[...dotsWrap.children];
+function go(n){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,idx)=>s.classList.toggle('active',idx===i));
+  dots.forEach((d,idx)=>d.classList.toggle('on',idx===i));
+  meta.textContent=(i===0?'':String(i+1).padStart(2,'0')+' — '+titles[i]);
+  progress.style.width=((i+1)/slides.length*100)+'%';
+  prev.disabled=i===0;next.disabled=i===slides.length-1;
+}
+prev.onclick=()=>go(i-1);next.onclick=()=>go(i+1);
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' ')go(i+1);
+  if(e.key==='ArrowLeft'||e.key==='PageUp')go(i-1);
+  if(e.key==='Home')go(0);if(e.key==='End')go(slides.length-1);
+});
+let sx=null;
+document.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
+document.addEventListener('touchend',e=>{if(sx===null)return;const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>50)go(i+(dx<0?1:-1));sx=null;},{passive:true});
+go(0);
+</script>
+</body>
+</html>
